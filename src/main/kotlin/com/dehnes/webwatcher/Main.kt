@@ -10,6 +10,7 @@ import org.jsoup.Jsoup
 import java.io.File
 import java.nio.charset.Charset
 import kotlin.random.Random
+import kotlin.system.exitProcess
 
 
 val stateFile = "webwatch.txt"
@@ -24,6 +25,11 @@ val userAgents = listOf(
 )
 
 fun main(args: Array<String>) {
+
+    if (args.size != 3) {
+        println("<url> <emailAddr> <baseDelayInMin>")
+        exitProcess(1)
+    }
 
     val url = args[0]
     val emailAddress = args[1]
