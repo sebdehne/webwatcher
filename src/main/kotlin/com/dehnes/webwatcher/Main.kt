@@ -16,33 +16,33 @@ import kotlin.system.exitProcess
 val stateFile = "webwatch.txt"
 
 val userAgents = listOf(
-        "Mozilla/5.0 (Linux; Android 8.0.0; SM-G960F Build/R16NW) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.84 Mobile Safari/537.36",
-        "Mozilla/5.0 (Linux; Android 7.0; SM-G892A Build/NRD90M; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/60.0.3112.107 Mobile Safari/537.36",
-        "Mozilla/5.0 (Linux; Android 6.0; HTC One X10 Build/MRA58K; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/61.0.3163.98 Mobile Safari/537.36",
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 12_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/69.0.3497.105 Mobile/15E148 Safari/605.1",
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 12_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/13.2b11866 Mobile/16A366 Safari/605.1.15",
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1"
+    "Mozilla/5.0 (Linux; Android 8.0.0; SM-G960F Build/R16NW) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.84 Mobile Safari/537.36",
+    "Mozilla/5.0 (Linux; Android 7.0; SM-G892A Build/NRD90M; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/60.0.3112.107 Mobile Safari/537.36",
+    "Mozilla/5.0 (Linux; Android 6.0; HTC One X10 Build/MRA58K; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/61.0.3163.98 Mobile Safari/537.36",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 12_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/69.0.3497.105 Mobile/15E148 Safari/605.1",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 12_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/13.2b11866 Mobile/16A366 Safari/605.1.15",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1"
 )
 
 fun main(args: Array<String>) {
 
     if (args.size != 3) {
-        println("<url> <emailAddr> <baseDelayInMin>")
+        println("<url> <baseDelayInMin> <emailAddr,....>")
         exitProcess(1)
     }
 
     val url = args[0]
-    val emailAddress = args[1]
-    val delayMin = args[2].toLong()
+    val delayMin = args[1].toLong()
+    val emailAddress = args[2].split(",")
 
     val client = OkHttpClient()
 
     while (true) {
 
         val request = Request.Builder()
-                .url(url)
-                .header("User-Agent", userAgents[Random.nextInt(0, userAgents.size)])
-                .build()
+            .url(url)
+            .header("User-Agent", userAgents[Random.nextInt(0, userAgents.size)])
+            .build()
 
         try {
             var body = ""
@@ -50,8 +50,8 @@ fun main(args: Array<String>) {
 
             val document = Jsoup.parse(body)
             val produktHrefs = document.select("a[href]")
-                    .map { el -> el.attr("href") }
-                    .filter { href -> href.contains("/produkt") }
+                .map { el -> el.attr("href") }
+                .filter { href -> href.contains("/produkt") }
 
             val newState = JSONArray(produktHrefs)
             val existingState = readState()
@@ -61,14 +61,17 @@ fun main(args: Array<String>) {
             if (delta != null) {
                 println("Change detected - sending email")
                 val deltaStr = delta.toString(2)
-                sendMail(
-                        emailAddress,
-                        emailAddress,
+
+                emailAddress.forEach { addr ->
+                    sendMail(
+                        addr,
+                        addr,
                         "Change detected $url",
                         """
                             delta: $deltaStr
                         """.trimIndent()
-                )
+                    )
+                }
             } else {
                 println("No change detected this time")
             }
@@ -98,8 +101,8 @@ fun delta(left: JSONArray, right: JSONArray): JSONObject? {
         null
     } else {
         JSONObject()
-                .put("missing", missing)
-                .put("new", extra)
+            .put("missing", missing)
+            .put("new", extra)
     }
 }
 
